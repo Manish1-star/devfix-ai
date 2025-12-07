@@ -1,81 +1,55 @@
-// 🔴 ENTER YOUR API KEY HERE
-const API_KEY = "YOUR_GEMINI_API_KEY"; 
+// ==========================================
+// DEVFIX AI - CONFIGURATION & LOGIC
+// ==========================================
 
-const codeInput = document.getElementById('code-input');
-const codeOutput = document.getElementById('code-output');
+// 🔴 STEP 1: PASTE YOUR GOOGLE GEMINI API KEY INSIDE THE QUOTES BELOW
+const API_KEY = "AIzaSyATjNf7JP4_0ls38iekN5xMPhVYft421ls"; 
+
+// DOM Elements
+const inputCode = document.getElementById('input-code');
+const outputCode = document.getElementById('output-code');
+const fixBtn = document.getElementById('fix-btn');
 const loading = document.getElementById('loading');
-const btnText = document.getElementById('btn-text');
-const targetLangSelect = document.getElementById('target-lang');
 
-let currentMode = 'debug'; // Modes: debug, convert, explain
-
-// 1. SWITCH MODES (UI Logic)
-function setMode(mode) {
-    currentMode = mode;
+// 2. MAIN FUNCTION TO FIX CODE
+async function fixMyCode() {
+    const code = inputCode.value.trim();
     
-    // UI Updates
-    document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
-    document.getElementById(`btn-${mode}`).classList.add('active');
-
-    // Show/Hide specific controls
-    if (mode === 'convert') {
-        targetLangSelect.classList.remove('hidden');
-        btnText.innerHTML = "Convert Code";
-        codeInput.placeholder = "// Paste code to convert (e.g., Python to Java)...";
-    } else if (mode === 'explain') {
-        targetLangSelect.classList.add('hidden');
-        btnText.innerHTML = "Explain Code";
-        codeInput.placeholder = "// Paste complex code to understand...";
-    } else { // debug
-        targetLangSelect.classList.add('hidden');
-        btnText.innerHTML = "Fix My Code";
-        codeInput.placeholder = "// Paste broken code here...";
-    }
-}
-
-// 2. PROCESS CODE (AI Logic)
-async function processCode() {
-    const code = codeInput.value.trim();
+    // Validation: Check if code is empty
     if (!code) {
-        alert("Please enter some code first!");
+        alert("Please paste some broken code first!");
         return;
     }
 
-    // Show Loading
-    loading.classList.remove('hidden');
-    loading.classList.add('flex');
-    codeOutput.textContent = "";
-
-    // CONSTRUCT PROMPT (The Secret Sauce)
-    let prompt = "";
-    
-    if (currentMode === 'debug') {
-        prompt = `You are a World-Class Senior Software Engineer. 
-        Your task: Analyze this code, find bugs/errors, and fix them.
-        Output Format: Provide ONLY the fixed code first, followed by a short comment explaining the fix.
-        Do not use markdown backticks.
-        Code:
-        ${code}`;
-    } 
-    else if (currentMode === 'convert') {
-        const target = targetLangSelect.value;
-        prompt = `You are a Code Translator. 
-        Your task: Convert the following code to ${target}.
-        Output Format: Provide ONLY the converted code. No explanations.
-        Do not use markdown backticks.
-        Code:
-        ${code}`;
-    } 
-    else if (currentMode === 'explain') {
-        prompt = `You are a Coding Tutor. 
-        Your task: Explain this code simply (like I am a beginner).
-        Output Format: Use bullet points. Keep it clear and concise.
-        Code:
-        ${code}`;
+    // Validation: Check if API Key is set
+    if (API_KEY === "PASTE_YOUR_API_KEY_HERE" || API_KEY === "") {
+        alert("API Key is missing! Please open script.js and add your Google Gemini API Key.");
+        return;
     }
 
+    // UI: Show Loading State
+    loading.classList.remove('hidden');
+    outputCode.innerHTML = "";
+    fixBtn.disabled = true;
+    fixBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing Bug...';
+
+    // 3. AI PROMPT ENGINEERING
+    const prompt = `
+    You are an expert Senior Software Engineer and Debugger. 
+    I have a piece of broken or buggy code. 
+    
+    Your task:
+    1. Identify the error/bug.
+    2. Fix the code.
+    3. Explain the solution clearly and concisely.
+    4. Provide the complete corrected code block.
+    
+    Here is the broken code:
+    ${code}
+    `;
+
     try {
-        // Call Gemini API
+        // Fetch Request to Google Gemini API
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -86,38 +60,51 @@ async function processCode() {
 
         const data = await response.json();
         
+        // UI: Remove Loading
+        loading.classList.add('hidden');
+        fixBtn.disabled = false;
+        fixBtn.innerHTML = '<i class="fas fa-tools"></i> Fix My Code';
+
+        // Check for Valid Response
         if (data.candidates && data.candidates[0].content) {
             let result = data.candidates[0].content.parts[0].text;
             
-            // Clean Markdown (```) if AI adds them
-            result = result.replace(/^```[a-z]*\n/i, '').replace(/```$/g, '');
-            
-            codeOutput.textContent = result.trim();
-            
-            // Re-apply Colors (Syntax Highlight)
-            Prism.highlightElement(codeOutput);
+            // Formatting: Convert Markdown to HTML for better display
+            result = result
+                .replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-400">$1</strong>') // Bold text
+                .replace(/```(.*?)```/gs, '<div class="bg-black p-4 rounded-lg border border-gray-700 my-3 text-green-400 font-mono text-xs md:text-sm overflow-x-auto">$1</div>'); // Code blocks
+
+            outputCode.innerHTML = result;
         } else {
-            codeOutput.textContent = "// Error: AI could not process your request.";
+            outputCode.innerText = "Error: AI could not fix this code. Please try again.";
         }
 
     } catch (error) {
-        codeOutput.textContent = "// System Error: Please check your Internet or API Key.";
-        console.error(error);
-    } finally {
+        // Error Handling
         loading.classList.add('hidden');
-        loading.classList.remove('flex');
+        fixBtn.disabled = false;
+        fixBtn.innerHTML = '<i class="fas fa-tools"></i> Fix My Code';
+        outputCode.innerText = "Connection Error! Please check your internet connection or API Key.";
+        console.error("DevFix Error:", error);
     }
 }
 
-// 3. COPY FUNCTION
+// Event Listener for Button Click
+fixBtn.addEventListener('click', fixMyCode);
+
+// Utility: Clear Input/Output
+function clearAll() {
+    inputCode.value = "";
+    outputCode.innerHTML = "// Solution will appear here...";
+}
+
+// Utility: Copy Result to Clipboard
 function copyOutput() {
-    const text = codeOutput.textContent;
-    if(text) {
+    const text = outputCode.innerText;
+    if(text && text !== "// Solution will appear here...") {
         navigator.clipboard.writeText(text);
-        // Visual Feedback
-        const copyBtn = document.querySelector('button[onclick="copyOutput()"]');
-        const originalText = copyBtn.innerHTML;
-        copyBtn.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        setTimeout(() => copyBtn.innerHTML = originalText, 2000);
+        alert("Solution Copied to Clipboard!");
+    } else {
+        alert("Nothing to copy yet!");
     }
 }
