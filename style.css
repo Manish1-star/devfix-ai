@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Coding Font for Inputs */
+textarea, pre, code {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+/* Active Mode Button Style */
+.mode-btn.active {
+    background-color: #2563eb; /* Blue */
+    color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+.mode-btn:not(.active) {
+    color: #9ca3af;
+}
+.mode-btn:not(.active):hover {
+    background-color: #1f2937;
+    color: white;
+}
+
+/* Custom Scrollbar (Thin & Sleek) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #0d1117;
+}
+::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #58a6ff;
+}
+
+/* Input Focus Glow */
+textarea:focus {
+    box-shadow: inset 0 0 0 1px #3b82f6;
+}
